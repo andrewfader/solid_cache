@@ -89,6 +89,27 @@ class SolidCacheFailsafeTest < ActiveSupport::TestCase
   end
 end
 
+class SolidCacheFailsafeConnectionFailedTest < ActiveSupport::TestCase
+  include FailureSafetyBehavior
+
+  setup do
+    @cache = nil
+    @namespace = "test-#{SecureRandom.hex}"
+
+    @cache = lookup_store(expires_in: 60)
+
+    # For LocalCacheBehavior tests
+    @peek = lookup_store(expires_in: 60)
+  end
+
+  def emulating_unavailability
+    wait_for_background_tasks(@cache)
+    emulating_timeouts(ActiveRecord::ConnectionFailed) do
+      yield lookup_store(namespace: @namespace)
+    end
+  end
+end
+
 class SolidCacheRaisingTest < ActiveSupport::TestCase
   include FailureRaisingBehavior
 
